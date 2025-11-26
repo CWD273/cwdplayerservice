@@ -18,10 +18,8 @@ export async function getServerSideProps(context) {
 
     if (!channel) return { props: { error: `Channel not found for id="${id}"` } };
 
-    let streamURL = channel.url;
-    if (channel.proxy) {
-      streamURL = `https://hlsr.vercel.app/api/proxy?url=${encodeURIComponent(streamURL)}`;
-    }
+    // Always force proxy to avoid CORS/mixed content issues
+    let streamURL = `https://hlsr.vercel.app/api/proxy?url=${encodeURIComponent(channel.url)}`;
 
     return {
       props: {
@@ -74,14 +72,21 @@ export default function Play({ error, title, streamURL }) {
               var url = ${JSON.stringify(streamURL)};
               var video = document.getElementById('player');
 
-              // Native HLS support (Safari)
+              console.log("Attempting to play stream:", url);
+
               if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                console.log("Native HLS supported (Safari). Setting src directly.");
                 video.src = url;
               } else if (window.Hls && window.Hls.isSupported()) {
-                var hls = new Hls({ maxBufferLength: 30 });
+                console.log("Using hls.js to attach stream.");
+                var hls = new Hls({ debug: true });
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                  console.error("HLS.js error:", data);
+                });
                 hls.loadSource(url);
                 hls.attachMedia(video);
               } else {
+                console.error("HLS not supported in this browser.");
                 var p = document.createElement('p');
                 p.textContent = 'HLS not supported in this browser.';
                 document.body.appendChild(p);
