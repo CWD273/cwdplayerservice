@@ -25,12 +25,15 @@ export async function getServerSideProps(context) {
     const attrs = [];
     if (channel.name) attrs.push(`NAME="${channel.name}"`);
     if (channel.codecs) attrs.push(`CODECS="${channel.codecs}"`);
-    if (channel.resolution) attrs.push(`RESOLUTION=${channel.resolution}x0`); // optional height-only
+    if (channel.resolution) attrs.push(`RESOLUTION=1280x${channel.resolution}`); // assume width if only height given
+    if (channel.bdwh) attrs.push(`BANDWIDTH=${channel.bdwh}`);
+    if (channel.bdwhavg) attrs.push(`AVERAGE-BANDWIDTH=${channel.bdwhavg}`);
+    if (channel.fps) attrs.push(`FRAME-RATE=${channel.fps}`);
+
     if (attrs.length) playlist += `#EXT-X-STREAM-INF:${attrs.join(',')}\n`;
 
     let streamURL = channel.url;
     if (channel.proxy) {
-      // Optional proxy rewrite
       streamURL = `https://hlsr.vercel.app/api/proxy?url=${encodeURIComponent(streamURL)}`;
     }
     playlist += `${streamURL}\n`;
@@ -55,4 +58,4 @@ export default function Home({ error }) {
       <p>Use ?id=your-channel-id (and optional ?src=custom-catalog-url)</p>
     </main>
   );
-  }
+}
